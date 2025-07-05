@@ -67,3 +67,120 @@ export default tseslint.config([
   },
 ])
 ```
+📁 `glyphlens-fullstack`
+
+```
+.
+├── client/                    # Frontend (Vite + React)
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   │   └── ui/
+│   │   │       ├── button.tsx
+│   │   │       ├── card.tsx
+│   │   │       ├── dialog.tsx
+│   │   │       └── input.tsx
+│   │   ├── App.tsx            # Main UI component
+│   │   ├── main.tsx           # Entry point
+│   │   └── vite-env.d.ts
+│   ├── index.html
+│   ├── package.json           # Frontend dependencies
+│   └── vite.config.ts
+│
+├── server/                    # Backend (Express.js)
+│   ├── index.ts               # Main server logic
+│   ├── routes/
+│   │   └── analyze.ts         # POST /analyze route
+│   ├── utils/
+│   │   └── analyzer.ts        # Image analysis stub logic
+│   ├── package.json           # Backend dependencies
+│   └── tsconfig.json
+│
+├── .gitignore
+└── README.md
+```
+
+---
+
+### 🔧 Sample backend code (server/index.ts)
+```ts
+import express from 'express';
+import fileUpload from 'express-fileupload';
+import analyzeRoute from './routes/analyze';
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+app.use(fileUpload());
+app.use(express.json());
+app.use('/analyze', analyzeRoute);
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+```
+
+### 📥 Sample analyze route (server/routes/analyze.ts)
+```ts
+import express from 'express';
+import { analyzeImage } from '../utils/analyzer';
+
+const router = express.Router();
+
+router.post('/', async (req, res) => {
+  const file = req.files?.image;
+  if (!file || Array.isArray(file)) {
+    return res.status(400).json({ error: 'No image uploaded' });
+  }
+
+  const result = await analyzeImage(file.data);
+  res.json({ result });
+});
+
+export default router;
+```
+
+### 🧠 Sample analyzer stub (server/utils/analyzer.ts)
+```ts
+export async function analyzeImage(buffer: Buffer): Promise<string> {
+  // Placeholder logic
+  return "[AI] Spiral Operator detected: Subsurface Beacon Interface.";
+}
+```
+
+### 🎛️ Updated client `src/App.tsx`
+```tsx
+import { useState } from 'react';
+
+export default function App() {
+  const [image, setImage] = useState<File | null>(null);
+  const [result, setResult] = useState<string>('');
+
+  const handleUpload = async () => {
+    if (!image) return;
+    const formData = new FormData();
+    formData.append('image', image);
+
+    const res = await fetch('http://localhost:3001/analyze', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+    setResult(data.result);
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">GlyphLens Uploader</h1>
+      <input type="file" onChange={(e) => setImage(e.target.files?.[0] || null)} />
+      <button onClick={handleUpload} className="ml-2 px-4 py-2 bg-blue-500 text-white rounded">
+        Analyze
+      </button>
+      {result && (
+        <div className="mt-4 text-green-600 font-mono">
+          <strong>Result:</strong> {result}
+        </div>
+      )}
+    </div>
+  );
+}
+```
